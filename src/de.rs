@@ -459,3 +459,54 @@ impl<'de> de::Deserializer<'de> for Config {
         identifier ignored_any unit_struct tuple_struct tuple
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::File;
+    use crate::FileFormat;
+    use crate::Config;
+    use std::panic;
+
+    #[derive(serde::Deserialize)]
+    struct CFG {
+        e: EnumConfig,
+    }
+
+    #[derive(serde::Deserialize)]
+    enum EnumConfig {
+        Foo,
+        Bar { filename: std::path::PathBuf },
+    }
+
+    #[test]
+    fn test_unreachable_not_reached_1() {
+        let working_config = r#"
+            e.Bar.filename = "blah"
+        "#;
+
+        let mut c = Config::default();
+        c.merge(File::from_str(working_config, FileFormat::Toml)).unwrap();
+        let c: CFG = c.try_into().unwrap();
+    }
+    #[test]
+    fn test_unreachable_not_reached_2() {
+        let working_config = r#"
+            e = "Foo"
+        "#;
+
+        let mut c = Config::default();
+        c.merge(File::from_str(working_config, FileFormat::Toml)).unwrap();
+        let c: CFG = c.try_into().unwrap();
+    }
+
+    #[test]
+    fn test_unreachable_not_reached_3() {
+        let panicing_config = r#"
+            e = "Bar"
+        "#;
+
+        let mut c = Config::default();
+        c.merge(File::from_str(panicing_config, FileFormat::Toml)).unwrap();
+        let c: CFG = c.try_into().unwrap();
+    }
+}
